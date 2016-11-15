@@ -10,8 +10,8 @@ public class CentralAuthority {
 		// TODO Auto-generated method stub
 		CentralAuthority c=new CentralAuthority();
 		KeyPair k=c.generateKeyPair();
-		System.out.println("Private key "+k.getPrivate());
-		System.out.println("Public Key "+k.getPublic());
+	//	System.out.println("Private key "+k.getPrivate());
+		//System.out.println("Public Key "+k.getPublic());
 
 	}
 

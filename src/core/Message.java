@@ -4,16 +4,24 @@
  */
 package core;
 
+import java.io.Serializable;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
 /**
  * A message that is created at a node or passed between nodes.
  */
-public class Message implements Comparable<Message> {
+public class Message implements Comparable<Message>, Serializable {
 	/** Value for infinite TTL of message */
 	public static final int INFINITE_TTL = -1;
 	private DTNHost from;
@@ -361,6 +369,33 @@ public class Message implements Comparable<Message> {
 	 */
 	public void setAppID(String appID) {
 		this.appID = appID;
+	}
+	
+	public String encryptMessage(String rawData){
+		  
+		Cipher cipher;
+		byte[] encrypted = null;
+		try {
+			cipher = Cipher.getInstance("RSA");
+			cipher.init(Cipher.ENCRYPT_MODE,to.getPublicKey());
+			encrypted = cipher.doFinal(rawData.getBytes());
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalBlockSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BadPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return new String(encrypted);
 	}
 	
 }

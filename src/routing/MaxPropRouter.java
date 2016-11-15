@@ -191,6 +191,7 @@ public class MaxPropRouter extends ActiveRouter {
 		Message m = super.messageTransferred(id, from);
 		
 		/* was this node the final recipient of the message? */
+		System.out.println(""+m.getTo().decryptMessage(m).getFrom().getVehicleNum());
 		System.out.println("Message transferred " + m.getId() +"from "+from.getName()+"  node path no of nodes "+m.getHopCount() +" path is " +m.getHops().toString());
 		System.out.println("**********************************************");
 		if (isDeliveredMessage(m)) {

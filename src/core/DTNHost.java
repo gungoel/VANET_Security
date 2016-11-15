@@ -4,14 +4,25 @@
  */
 package core;
 
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import movement.MovementModel;
 import movement.Path;
 import routing.MessageRouter;
 import routing.RoutingInfo;
+
 
 /**
  * A DTN capable host.
@@ -36,9 +47,20 @@ public class DTNHost implements Comparable<DTNHost> {
 	
 	// Added for VANET
 	
+	
+
 	private String direction;
 	private String vehicleNum;
+	private PrivateKey privateKey;
+	private PublicKey publicKey;
+	
 
+	public PublicKey getPublicKey() {
+		return publicKey;
+	}
+	public void setPublicKey(PublicKey publicKey) {
+		this.publicKey = publicKey;
+	}
 	public void setVehicleNum(String vehicleNum) {
 		this.vehicleNum = vehicleNum;
 	}
@@ -90,6 +112,12 @@ public class DTNHost implements Comparable<DTNHost> {
 			String groupId, List<NetworkInterface> interf,
 			ModuleCommunicationBus comBus, 
 			MovementModel mmProto, MessageRouter mRouterProto) {
+		
+		
+		CentralAuthority central=new CentralAuthority();
+		KeyPair keys=central.generateKeyPair();
+		privateKey=keys.getPrivate();
+		publicKey=keys.getPublic();
 		this.comBus = comBus;
 		this.location = new Coord(0,0);
 		this.address = getNextAddress();
@@ -553,4 +581,37 @@ public class DTNHost implements Comparable<DTNHost> {
 		return this.getAddress() - h.getAddress();
 	}
 
+	public Message decryptMessage(Message m){
+		Message decryptedM = m;
+		decryptedM.getFrom().setVehicleNum(decryptString(m.getFrom().getVehicleNum()));
+		decryptedM.getFrom().setDirection(decryptString(m.getFrom().getDirection()));
+		//decryptedM.getFrom().setPath(decryptString(m.getFrom().getPath()));
+		decryptedM.getFrom().setSpeed(Double.parseDouble(decryptString(m.getFrom().getSpeed()+"")));
+		return decryptedM;
+	}
+	
+	public String decryptString(String encryptedData){
+		//byte[] data = new BASE64Decoder().decodeBuffer(encryptedData);
+        Cipher aesCipher;
+        byte[] plainData = null;
+		try {
+			aesCipher = Cipher.getInstance("RSA");
+			aesCipher.init(Cipher.DECRYPT_MODE, this.privateKey);
+		    plainData = aesCipher.doFinal(encryptedData.getBytes());
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalBlockSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BadPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+       
+        return new String(plainData);
+	}
 }
