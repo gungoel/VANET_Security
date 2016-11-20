@@ -50,20 +50,29 @@ public class MessageCreateEvent extends MessageEvent {
 	 */
 	@Override
 	public void processEvent(World world) {
+
 		DTNHost to = world.getNodeByAddress(this.toAddr);
-		DTNHost from = world.getNodeByAddress(this.fromAddr);			
-
+		DTNHost from = world.getNodeByAddress(this.fromAddr);
 		Message m = new Message(from, to, this.id, this.size);
-
+        m.setVehicleNum(from.getVehicleNum());
 		m.setResponseSize(this.responseSize);
 		
-		//System.out.println("Finalllllyyyy u shud be the one");
-		//System.out.println("DTN host speed "+ from.getSpeed()+"destination is "+ from.getDestination());
-		System.out.println("details of to host"+ to.getAddress()+" Name "+to.getName());
-		System.out.println("details of from host "+ from.getAddress()+"name "+from.getName());
-		System.out.println("message details "+ m.getId());
-		System.out.println("**************************************************************");
+		
+			//System.out.println("from node"+ m.getVehicleNum());
+			//System.out.println("to node "+ to);
 
-		from.createNewMessage(m);
+			Message encryptedM=m.encryptMessage(m);
+			//m=encryptedM;
+			//System.out.println("Finalllllyyyy u shud be the one");
+			//System.out.println("DTN host speed "+ from.getSpeed()+"destination is "+ from.getDestination());
+
+		System.out.println("");
+		//System.out.println("details of to host"+ to.getAddress()+" Name "+to.getName());
+		//System.out.println("details of from host "+ from.getAddress()+"name "+from.getName());
+		System.out.println("Encrypted Message :  "+ encryptedM.getVehicleNum()+"id : "+ encryptedM.getId());
+	
+		from.createNewMessage(encryptedM);
+		System.out.println("**************************************************************");
+		
 	}
 }

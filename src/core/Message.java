@@ -5,8 +5,11 @@
 package core;
 
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +20,8 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import sun.misc.BASE64Decoder;
+import sun.misc.BASE64Encoder;
 
 /**
  * A message that is created at a node or passed between nodes.
@@ -42,29 +47,37 @@ public class Message implements Comparable<Message>, Serializable {
 	private double timeCreated;
 	/** Initial TTL of the message */
 	private int initTtl;
-	
+
 	/** if a response to this message is required, this is the size of the 
 	 * response message (or 0 if no response is requested) */
 	private int responseSize;
 	/** if this message is a response message, this is set to the request msg*/
 	private Message requestMsg;
-	
+
 	/** Container for generic message properties. Note that all values
 	 * stored in the properties should be immutable because only a shallow
 	 * copy of the properties is made when replicating messages */
 	private Map<String, Object> properties;
-	
+
 	/** Application ID of the application that created the message */
 	private String	appID;
 	// Added for VANET ACN
-	
-	
+
+	private String vehicleNum;
+
+	public String getVehicleNum() {
+		return vehicleNum;
+	}
+
+	public void setVehicleNum(String vehicleNum) {
+		this.vehicleNum = vehicleNum;
+	}
 
 	static {
 		reset();
 		DTNSim.registerForReset(Message.class.getCanonicalName());
 	}
-	
+
 	/**
 	 * Creates a new Message.
 	 * @param from Who the message is (originally) from
@@ -80,7 +93,7 @@ public class Message implements Comparable<Message>, Serializable {
 		this.size = size;
 		this.path = new ArrayList<DTNHost>();
 		this.uniqueId = nextUniqueId;
-		
+
 		this.timeCreated = SimClock.getTime();
 		this.timeReceived = this.timeCreated;
 		this.initTtl = INFINITE_TTL;
@@ -88,11 +101,11 @@ public class Message implements Comparable<Message>, Serializable {
 		this.requestMsg = null;
 		this.properties = null;
 		this.appID = null;
-		
+		this.vehicleNum=from.getVehicleNum();
 		Message.nextUniqueId++;
 		addNodeOnPath(from);
 	}
-	
+
 	/**
 	 * Returns the node this message is originally from
 	 * @return the node this message is originally from
@@ -116,7 +129,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public String getId() {
 		return this.id;
 	}
-	
+
 	/**
 	 * Returns an ID that is unique per message instance 
 	 * (different for replicates too)
@@ -125,7 +138,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public int getUniqueId() {
 		return this.uniqueId;
 	}
-	
+
 	/**
 	 * Returns the size of the message (in bytes)
 	 * @return the size of the message
@@ -141,7 +154,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public void addNodeOnPath(DTNHost node) {
 		this.path.add(node);
 	}
-	
+
 	/**
 	 * Returns a list of nodes this message has passed so far
 	 * @return The list as vector
@@ -149,7 +162,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public List<DTNHost> getHops() {
 		return this.path;
 	}
-	
+
 	/**
 	 * Returns the amount of hops this message has passed
 	 * @return the amount of hops this message has passed
@@ -157,7 +170,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public int getHopCount() {
 		return this.path.size() -1;
 	}
-	
+
 	/** 
 	 * Returns the time to live (minutes) of the message or Integer.MAX_VALUE 
 	 * if the TTL is infinite. Returned value can be negative if the TTL has
@@ -173,8 +186,8 @@ public class Message implements Comparable<Message>, Serializable {
 					(SimClock.getTime()-this.timeCreated)) /60.0 );
 		}
 	}
-	
-	
+
+
 	/**
 	 * Sets the initial TTL (time-to-live) for this message. The initial
 	 * TTL is the TTL when the original message was created. The current TTL
@@ -184,7 +197,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public void setTtl(int ttl) {
 		this.initTtl = ttl;
 	}
-	
+
 	/**
 	 * Sets the time when this message was received.
 	 * @param time The time to set
@@ -192,7 +205,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public void setReceiveTime(double time) {
 		this.timeReceived = time;
 	}
-	
+
 	/**
 	 * Returns the time when this message was received
 	 * @return The time
@@ -200,7 +213,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public double getReceiveTime() {
 		return this.timeReceived;
 	}
-	
+
 	/**
 	 * Returns the time when this message was created
 	 * @return the time when this message was created
@@ -208,7 +221,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public double getCreationTime() {
 		return this.timeCreated;
 	}
-	
+
 	/**
 	 * If this message is a response to a request, sets the request message
 	 * @param request The request message
@@ -216,7 +229,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public void setRequest(Message request) {
 		this.requestMsg = request;
 	}
-	
+
 	/**
 	 * Returns the message this message is response to or null if this is not
 	 * a response message
@@ -225,7 +238,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public Message getRequest() {
 		return this.requestMsg;
 	}
-	
+
 	/**
 	 * Returns true if this message is a response message
 	 * @return true if this message is a response message
@@ -233,7 +246,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public boolean isResponse() {
 		return this.requestMsg != null;
 	}
-	
+
 	/**
 	 * Sets the requested response message's size. If size == 0, no response
 	 * is requested (default)
@@ -242,7 +255,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public void setResponseSize(int size) {
 		this.responseSize = size;
 	}
-	
+
 	/**
 	 * Returns the size of the requested response message or 0 if no response
 	 * is requested.
@@ -251,7 +264,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public int getResponseSize() {
 		return responseSize;
 	}
-	
+
 	/**
 	 * Returns a string representation of the message
 	 * @return a string representation of the message
@@ -273,7 +286,7 @@ public class Message implements Comparable<Message>, Serializable {
 		this.requestMsg  = m.requestMsg;
 		this.initTtl = m.initTtl;
 		this.appID = m.appID;
-		
+
 		if (m.properties != null) {
 			Set<String> keys = m.properties.keySet();
 			for (String key : keys) {
@@ -281,7 +294,7 @@ public class Message implements Comparable<Message>, Serializable {
 			}
 		}
 	}
-	
+
 	/**
 	 * Adds a generic property for this message. The key can be any string but 
 	 * it should be such that no other class accidently uses the same value.
@@ -298,10 +311,10 @@ public class Message implements Comparable<Message>, Serializable {
 			throw new SimError("Message " + this + " already contains value " + 
 					"for a key " + key);
 		}
-		
+
 		this.updateProperty(key, value);
 	}
-	
+
 	/**
 	 * Returns an object that was stored to this message using the given
 	 * key. If such object is not found, null is returned.
@@ -314,7 +327,7 @@ public class Message implements Comparable<Message>, Serializable {
 		}
 		return this.properties.get(key);
 	}
-	
+
 	/**
 	 * Updates a value for an existing property. For storing the value first 
 	 * time, {@link #addProperty(String, Object)} should be used which
@@ -331,7 +344,7 @@ public class Message implements Comparable<Message>, Serializable {
 
 		this.properties.put(key, value);
 	}
-	
+
 	/**
 	 * Returns a replicate of this message (identical except for the unique id)
 	 * @return A replicate of the message
@@ -341,7 +354,7 @@ public class Message implements Comparable<Message>, Serializable {
 		m.copyFrom(this);
 		return m;
 	}
-	
+
 	/**
 	 * Compares two messages by their ID (alphabetically).
 	 * @see String#compareTo(String)
@@ -349,7 +362,7 @@ public class Message implements Comparable<Message>, Serializable {
 	public int compareTo(Message m) {
 		return toString().compareTo(m.toString());
 	}
-	
+
 	/**
 	 * Resets all static fields to default values
 	 */
@@ -370,15 +383,48 @@ public class Message implements Comparable<Message>, Serializable {
 	public void setAppID(String appID) {
 		this.appID = appID;
 	}
-	
-	public String encryptMessage(String rawData){
-		  
-		Cipher cipher;
-		byte[] encrypted = null;
+
+	public Message encryptMessage(Message m){
+		Message encryptedM =m;
+		System.out.println("Vehcile Number before encryption "+m.getVehicleNum());
+		//System.out.println("Direction "+m.getFrom().getDirection());
+		//System.out.println("");
+		encryptedM.setVehicleNum(encryptString(m.getVehicleNum()));
+		
+		System.out.println("Vehcile Number after encryption "+m.getVehicleNum());
+		//encryptedM.getFrom().setDirection(encryptString(m.getDirection(),m));
+		//decryptedM.getFrom().setPath(decryptString(m.getFrom().getPath()));
+		//encryptedM.getFrom().setEncryptedSpeed(encryptString(m.getFrom().getSpeed()+""));
+		return encryptedM;
+	}
+
+	public String encryptString(String rawData){
+
+		//Cipher cipher;
+		/*byte[] encrypted = new byte[117];
+		RSATrial rsa=new RSATrial();
+
+		byte[]  encryptedValue = rsa.encrypt(rawData.getBytes());
+		String test = "";
+        for (byte b : encryptedValue)
+        {
+            test += Byte.toString(b);
+        }*/
+		// decrypt
+		/*String encryptedValue="";
+		//System.out.println("Public key finally for receiver "+m.getTo().getName()+":: "+m.getTo().getPublicKey());
+		//System.out.println("Raw data for vehicle number "+rawData);
 		try {
 			cipher = Cipher.getInstance("RSA");
-			cipher.init(Cipher.ENCRYPT_MODE,to.getPublicKey());
+			cipher.init(Cipher.ENCRYPT_MODE,m.getTo().getPublicKey());
+			System.out.println("Encrypting data"+rawData);
 			encrypted = cipher.doFinal(rawData.getBytes());
+			System.out.println("Encrypting data after getBytes"+ encrypted.toString());
+
+			BASE64Encoder base64 = new BASE64Encoder();
+			encryptedValue = base64.encode(encrypted);
+
+
 		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -394,8 +440,146 @@ public class Message implements Comparable<Message>, Serializable {
 		} catch (InvalidKeyException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}*/
+
+		byte[] ciphertext=new byte[128];
+		try {
+
+			PublicKey key = to.getPublicKey();
+			Cipher cipher;
+
+			cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+
+
+
+			cipher.init(Cipher.ENCRYPT_MODE, key);
+
+			ciphertext = cipher.doFinal(rawData.getBytes("UTF8"));
+
+			
 		}
-		return new String(encrypted);
+		catch (IllegalBlockSizeException | BadPaddingException | UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return encodeBASE64(ciphertext);
+
+		//return test;
 	}
-	
+	private static String encodeBASE64(byte[] bytes)
+	{
+		BASE64Encoder b64 = new BASE64Encoder();
+		return b64.encode(bytes);
+	}
+	public Message decryptMessage(Message m){
+		Message decryptedM = m;
+		System.out.println("vehicle Num in message m  "+m.getVehicleNum());
+		decryptedM.setVehicleNum(decryptString(m.getVehicleNum()));
+		System.out.println("Vehicle Number after decryption "+decryptedM.getVehicleNum());
+		//decryptedM.getFrom().setDirection(decryptString(m.getFrom().getDirection(),m));
+		//decryptedM.getFrom().setPath(decryptString(m.getFrom().getPath()));
+		//decryptedM.getFrom().setEncryptedSpeed(decryptString(m.getFrom().getSpeed()+"",m));
+		return decryptedM;
+	}
+
+	public String decryptString(String encryptedData){
+		//byte[] data = new BASE64Decoder().decodeBuffer(encryptedData);
+		/*Cipher rsaCipher;
+
+
+		byte[] plainData = new byte[128];
+		// String decryptedValue=null;
+		byte[] decrypted = rsa.decrypt(encryptedData.getBytes());*/
+
+		/*   String test = "";
+        for (byte b : decrypted)
+        {
+            test += Byte.toString(b);
+        }*/
+		// return test;
+
+		/*  if(m.getTo().getPrivateKey().equals(this.getPrivateKey()))
+        	{System.out.println("Node id is::::::::::::::::: "+m.getFrom().getName());
+        	System.out.println("Node id of to node:::::::::"+m.getTo().getName());
+        	}*/
+		/*  
+		try {
+			//System.out.println("Private key of receiver node  "+m.getTo().getName()+": "+m.getTo().getPrivateKey());
+			rsaCipher = Cipher.getInstance("RSA");
+			rsaCipher.init(Cipher.DECRYPT_MODE, m.getTo().getPrivateKey());
+			System.out.println("Encrypted data in DTN host while decrption "+ encryptedData);
+			// String charSet="UTF-8";
+		    plainData = rsaCipher.doFinal(encryptedData.getBytes());
+		    BASE64Encoder base64 = new BASE64Encoder();
+		     decryptedValue = base64.encode(plainData);
+		    System.out.println(plainData);
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalBlockSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BadPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} */
+
+		// return new String(plainData);
+		//return new String(decrypted);
+
+		PrivateKey key = to.getPrivateKey();
+		Cipher cipher;
+		byte[] plaintext=new byte[117];
+		String data="";
+		try {
+			cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+			cipher.init(Cipher.DECRYPT_MODE, key);
+
+			 plaintext = cipher.doFinal(decodeBASE64(encryptedData));
+			  data= new String(plaintext, "UTF8");
+			  System.out.println("data aftre decrypion :" +data);
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalBlockSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BadPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return data;
+		
+
+
+
+
+
+
+
+	}
+	private static byte[] decodeBASE64(String text) throws Exception
+	{
+		BASE64Decoder b64 = new BASE64Decoder();
+		return b64.decodeBuffer(text);
+	}
 }

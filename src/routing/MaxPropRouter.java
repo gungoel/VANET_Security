@@ -117,7 +117,8 @@ public class MaxPropRouter extends ActiveRouter {
 
 	@Override
 	public void changedConnection(Connection con) {
-		if (con.isUp()) { // new connection
+		if (con.isUp()) {
+			System.out.println("Connection is up changed connection method");// new connection
 			this.costsForMessages = null; // invalidate old cost estimates
 			//System.out.println("Spped of connection"+con.getSpeed());
 			if (con.isInitiator(getHost())) {
@@ -130,6 +131,8 @@ public class MaxPropRouter extends ActiveRouter {
 				assert mRouter instanceof MaxPropRouter : "MaxProp only works "+ 
 				" with other routers of same type";
 				MaxPropRouter otherRouter = (MaxPropRouter)mRouter;
+				
+				//m.getTo().decryptMessage(m);
 				
 				/* exchange ACKed message data */
 				this.ackedMessageIds.addAll(otherRouter.ackedMessageIds);
@@ -186,12 +189,13 @@ public class MaxPropRouter extends ActiveRouter {
 	@Override
 	public Message messageTransferred(String id, DTNHost from) {
 		
-		
+		System.out.println("In message transferred method max prop router ");
 		this.costsForMessages = null; // new message -> invalidate costs
 		Message m = super.messageTransferred(id, from);
 		
 		/* was this node the final recipient of the message? */
-		System.out.println(""+m.getTo().decryptMessage(m).getFrom().getVehicleNum());
+		System.out.println("Encrypted value of message in max prop router is " +m.getFrom().getVehicleNum());
+	//	m.getTo().decryptMessage(m);
 		System.out.println("Message transferred " + m.getId() +"from "+from.getName()+"  node path no of nodes "+m.getHopCount() +" path is " +m.getHops().toString());
 		System.out.println("**********************************************");
 		if (isDeliveredMessage(m)) {
@@ -208,14 +212,17 @@ public class MaxPropRouter extends ActiveRouter {
 	 */
 	@Override
 	protected void transferDone(Connection con) {
+		System.out.println("In transfer done method");
 		Message m = con.getMessage();
 		/* was the message delivered to the final recipient? */
+		System.out.println("In Transfer done method"+ m.getVehicleNum());
 		if (m.getTo() == con.getOtherNode(getHost())) { 
+			m.decryptMessage(m);
 			this.ackedMessageIds.add(m.getId()); // yes, add to ACKed messages
 			this.deleteMessage(m.getId(), false); // delete from buffer
 		}
 		//m.setVehicleNo("ABC123kfk");
-		System.out.println("message created"+ m.getFrom().getDirection()+"name " +m.getFrom().getVehicleNum());
+		//System.out.println("message created"+ m.getFrom().getDirection()+"name " +m.getFrom().getVehicleNum());
 		
 	}
 	

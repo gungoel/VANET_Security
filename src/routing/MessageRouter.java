@@ -310,7 +310,7 @@ public abstract class MessageRouter {
 		Message incoming = removeFromIncomingBuffer(id, from);
 		boolean isFinalRecipient;
 		boolean isFirstDelivery; // is this first delivered instance of the msg
-		
+		System.out.println("In message router   " + from.getVehicleNum());
 		
 		if (incoming == null) {
 			throw new SimError("No message with ID " + id + " in the incoming "+
@@ -331,6 +331,8 @@ public abstract class MessageRouter {
 		Message aMessage = (outgoing==null)?(incoming):(outgoing);
 		// If the application re-targets the message (changes 'to')
 		// then the message is not considered as 'delivered' to this host.
+		System.out.println("In Message router "+aMessage.getVehicleNum()+"from node id "+aMessage.getFrom().getName());
+		
 		isFinalRecipient = aMessage.getTo() == this.host;
 		isFirstDelivery = isFinalRecipient &&
 		!isDeliveredMessage(aMessage);
@@ -438,6 +440,7 @@ public abstract class MessageRouter {
 	 */
 	public boolean createNewMessage(Message m) {
 		m.setTtl(this.msgTtl);
+		//m.setVehicleNum(m.getFrom().getVehicleNum());
 		addToMessages(m, true);		
 		return true;
 	}

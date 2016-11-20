@@ -4,6 +4,7 @@
  */
 package core;
 
+import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -18,10 +19,12 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
+import Decoder.BASE64Encoder;
 import movement.MovementModel;
 import movement.Path;
 import routing.MessageRouter;
 import routing.RoutingInfo;
+import sun.misc.BASE64Decoder;
 
 
 /**
@@ -44,16 +47,16 @@ public class DTNHost implements Comparable<DTNHost> {
 	private List<MovementListener> movListeners;
 	private List<NetworkInterface> net;
 	private ModuleCommunicationBus comBus;
-	
+	private RSATrial rsa;
 	// Added for VANET
-	
-	
 
+
+	private String encryptedSpeed;
 	private String direction;
 	private String vehicleNum;
 	private PrivateKey privateKey;
 	private PublicKey publicKey;
-	
+
 
 	public PublicKey getPublicKey() {
 		return publicKey;
@@ -112,28 +115,42 @@ public class DTNHost implements Comparable<DTNHost> {
 			String groupId, List<NetworkInterface> interf,
 			ModuleCommunicationBus comBus, 
 			MovementModel mmProto, MessageRouter mRouterProto) {
-		
-		
-		CentralAuthority central=new CentralAuthority();
-		KeyPair keys=central.generateKeyPair();
-		privateKey=keys.getPrivate();
-		publicKey=keys.getPublic();
+
+
+		//CentralAuthority central=new CentralAuthority();
+		RSAusingSecurityClasses keys=new RSAusingSecurityClasses();
+		try {
+			keys = new RSAusingSecurityClasses();
+			KeyPair key=keys.generateKeys();
+			privateKey=key.getPrivate();
+			publicKey=key.getPublic();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+
+
 		this.comBus = comBus;
 		this.location = new Coord(0,0);
 		this.address = getNextAddress();
-		
-		
+
+
 		this.name = groupId+ address; ///changed the name as vehicle no.
-		this.vehicleNum=VehicleName();
+		//this.vehicleNum=VehicleName();
+		this.vehicleNum="abc"+getNextAddress();
+
 		this.direction="UP";   //
-		
+
 		this.net = new ArrayList<NetworkInterface>();
 
 		for (NetworkInterface i : interf) {
 			NetworkInterface ni = i.replicate();
 			ni.setHost(this);
 			net.add(ni);
-		}	
+		}
+		//System.out.println("Private key of node "+this.getName()+" is "+privateKey);
+		//System.out.println("Public key of node "+this.getName()+" is "+ publicKey);
 
 		// TODO - think about the names of the interfaces and the nodes
 		//this.name = groupId + ((NetworkInterface)net.get(1)).getAddress();
@@ -150,6 +167,7 @@ public class DTNHost implements Comparable<DTNHost> {
 
 		this.nextTimeToMove = movement.nextPathAvailable();
 		this.path = null;
+		rsa=new RSATrial();
 
 		if (movLs != null) { // inform movement listeners about the location
 			for (MovementListener l : movLs) {
@@ -157,8 +175,8 @@ public class DTNHost implements Comparable<DTNHost> {
 			}
 		}
 	}
-	
-	
+
+
 
 	/**
 	 * Returns a new network interface address and increments the address for
@@ -167,13 +185,13 @@ public class DTNHost implements Comparable<DTNHost> {
 	 */
 	private synchronized static int getNextAddress() {
 		return nextAddress++;
-		
+
 		//generate unique random number
 	}
-	
+
 	private synchronized static String VehicleName() {
-		return "abc"+nextAddress++;
-		
+		//return "abc"+nextAddress++;
+		return ""+nextAddress++;
 		//generate unique random number
 	}
 
@@ -215,7 +233,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	public int getAddress() {
 		return this.address;
 	}
-	
+
 	/**
 	 * Returns this hosts's ModuleCommunicationBus
 	 * @return this hosts's ModuleCommunicationBus
@@ -223,8 +241,8 @@ public class DTNHost implements Comparable<DTNHost> {
 	public ModuleCommunicationBus getComBus() {
 		return this.comBus;
 	}
-	
-    /**
+
+	/**
 	 * Informs the router of this host about state change in a connection
 	 * object.
 	 * @param con  The connection object whose state changed
@@ -371,11 +389,11 @@ public class DTNHost implements Comparable<DTNHost> {
 		} else {
 			ni = getInterface(1);
 			no = anotherHost.getInterface(1);
-			
+
 			assert (ni.getInterfaceType().equals(no.getInterfaceType())) : 
 				"Interface types do not match.  Please specify interface type explicitly";
 		}
-		
+
 		if (up) {
 			ni.createConnection(no);
 		} else {
@@ -389,7 +407,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	public void connect(DTNHost h) {
 		System.err.println(
 				"WARNING: using deprecated DTNHost.connect(DTNHost)" +
-		"\n Use DTNHost.forceConnection(DTNHost,null,true) instead");
+				"\n Use DTNHost.forceConnection(DTNHost,null,true) instead");
 		forceConnection(h,null,true);
 	}
 
@@ -401,7 +419,7 @@ public class DTNHost implements Comparable<DTNHost> {
 		if (!isActive()) {
 			return;
 		}
-		
+
 		if (simulateConnections) {
 			for (NetworkInterface i : net) {
 				i.update();
@@ -541,6 +559,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 */
 	public void createNewMessage(Message m) {
 		this.router.createNewMessage(m);
+		System.out.println("Message in encrypted form in DTN host"+m.getVehicleNum());
 	}
 
 	/**
@@ -581,37 +600,18 @@ public class DTNHost implements Comparable<DTNHost> {
 		return this.getAddress() - h.getAddress();
 	}
 
-	public Message decryptMessage(Message m){
-		Message decryptedM = m;
-		decryptedM.getFrom().setVehicleNum(decryptString(m.getFrom().getVehicleNum()));
-		decryptedM.getFrom().setDirection(decryptString(m.getFrom().getDirection()));
-		//decryptedM.getFrom().setPath(decryptString(m.getFrom().getPath()));
-		decryptedM.getFrom().setSpeed(Double.parseDouble(decryptString(m.getFrom().getSpeed()+"")));
-		return decryptedM;
-	}
+
 	
-	public String decryptString(String encryptedData){
-		//byte[] data = new BASE64Decoder().decodeBuffer(encryptedData);
-        Cipher aesCipher;
-        byte[] plainData = null;
-		try {
-			aesCipher = Cipher.getInstance("RSA");
-			aesCipher.init(Cipher.DECRYPT_MODE, this.privateKey);
-		    plainData = aesCipher.doFinal(encryptedData.getBytes());
-		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalBlockSizeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (BadPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-       
-        return new String(plainData);
+	public PrivateKey getPrivateKey() {
+		return privateKey;
+	}
+	public void setPrivateKey(PrivateKey privateKey) {
+		this.privateKey = privateKey;
+	}
+	public String getEncryptedSpeed() {
+		return encryptedSpeed;
+	}
+	public void setEncryptedSpeed(String encryptedSpeed) {
+		this.encryptedSpeed = encryptedSpeed;
 	}
 }
