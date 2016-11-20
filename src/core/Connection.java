@@ -171,6 +171,7 @@ public abstract class Connection {
 	 * @return true if the connection is ready to transfer a message
 	 */
 	public boolean isReadyForTransfer() {
+		//System.out.println("Msg on fly in is Ready to transfer method : "+ msgOnFly.getVehicleNum());
 		return this.isUp && this.msgOnFly == null; 
 	}
 
@@ -179,6 +180,7 @@ public abstract class Connection {
 	 * @return The message or null if no message is being transferred
 	 */	
 	public Message getMessage() {
+		//System.out.println("Msg on fly in getMessage: "+ msgOnFly.getVehicleNum());
 		return this.msgOnFly;
 	}
 
@@ -197,6 +199,8 @@ public abstract class Connection {
 		}
 		else {
 			if (isMessageTransferred()) {
+				//System.out.println("Message transferred true :" + this.msgFromNode.getVehicleNum());
+				//System.out.println("Blah Blah " + this.msgOnFly.getVehicleNum());
 				return this.bytesTransferred + this.msgOnFly.getSize();
 			}
 			else {

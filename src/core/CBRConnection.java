@@ -28,6 +28,7 @@ public class CBRConnection extends Connection {
 		super(fromNode, fromInterface, toNode, vehicleNum,direction,toInterface);
 		this.speed = connectionSpeed; 
 		this.transferDoneTime = 0;
+//		System.out.println("In CBR connection constructor");
 
 	}
 
@@ -51,7 +52,7 @@ public class CBRConnection extends Connection {
 		this.msgFromNode = from;
 		Message newMessage = m.replicate();
 		int retVal = getOtherNode(from).receiveMessage(newMessage, from);
-
+		//System.out.println("IN CBR connection start "+newMessage.getVehicleNum());
 		if (retVal == MessageRouter.RCV_OK) {
 			this.msgOnFly = newMessage;
 			this.transferDoneTime = SimClock.getTime() + 

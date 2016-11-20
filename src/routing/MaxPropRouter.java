@@ -287,6 +287,7 @@ public class MaxPropRouter extends ActiveRouter {
 	public void update() {
 		super.update();
 		if (!canStartTransfer() ||isTransferring()) {
+			//System.out.println(" Max prop have something to transfer");
 			return; // nothing to transfer or is currently transferring 
 		}
 		
