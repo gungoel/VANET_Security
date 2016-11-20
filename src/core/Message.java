@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -26,7 +25,7 @@ import sun.misc.BASE64Encoder;
 /**
  * A message that is created at a node or passed between nodes.
  */
-@SuppressWarnings("serial")
+@SuppressWarnings({ "serial", "restriction" })
 public class Message implements Comparable<Message>, Serializable {
 	/** Value for infinite TTL of message */
 	public static final int INFINITE_TTL = -1;
@@ -48,31 +47,21 @@ public class Message implements Comparable<Message>, Serializable {
 	private double timeCreated;
 	/** Initial TTL of the message */
 	private int initTtl;
-
 	/** if a response to this message is required, this is the size of the 
 	 * response message (or 0 if no response is requested) */
 	private int responseSize;
 	/** if this message is a response message, this is set to the request msg*/
 	private Message requestMsg;
-
 	/** Container for generic message properties. Note that all values
 	 * stored in the properties should be immutable because only a shallow
 	 * copy of the properties is made when replicating messages */
 	private Map<String, Object> properties;
-
 	/** Application ID of the application that created the message */
 	private String	appID;
+
 	// Added for VANET ACN
-
 	private String vehicleNum;
-
-	public String getVehicleNum() {
-		return vehicleNum;
-	}
-
-	public void setVehicleNum(String vehicleNum) {
-		this.vehicleNum = vehicleNum;
-	}
+	private String speed;
 
 	static {
 		reset();
@@ -94,7 +83,6 @@ public class Message implements Comparable<Message>, Serializable {
 		this.size = size;
 		this.path = new ArrayList<DTNHost>();
 		this.uniqueId = nextUniqueId;
-
 		this.timeCreated = SimClock.getTime();
 		this.timeReceived = this.timeCreated;
 		this.initTtl = INFINITE_TTL;
@@ -103,6 +91,7 @@ public class Message implements Comparable<Message>, Serializable {
 		this.properties = null;
 		this.appID = null;
 		this.vehicleNum=from.getVehicleNum();
+		this.speed=Double.toString(from.getSpeed());
 		Message.nextUniqueId++;
 		addNodeOnPath(from);
 	}
@@ -111,6 +100,8 @@ public class Message implements Comparable<Message>, Serializable {
 	 * Returns the node this message is originally from
 	 * @return the node this message is originally from
 	 */
+	
+
 	public DTNHost getFrom() {
 		return this.from;
 	}
@@ -287,6 +278,8 @@ public class Message implements Comparable<Message>, Serializable {
 		this.requestMsg  = m.requestMsg;
 		this.initTtl = m.initTtl;
 		this.appID = m.appID;
+		this.vehicleNum=m.vehicleNum;
+		this.speed=m.speed;
 
 		if (m.properties != null) {
 			Set<String> keys = m.properties.keySet();
@@ -385,80 +378,36 @@ public class Message implements Comparable<Message>, Serializable {
 		this.appID = appID;
 	}
 
-	public Message encryptMessage(Message m){
-		Message encryptedM =m;
-		System.out.println("Vehcile Number before encryption "+m.getVehicleNum());
+/*	public Message encryptMessage(Message m){
+		
+		System.out.println("Vehcile Number before encryption "+m.vehicleNum);
 		//System.out.println("Direction "+m.getFrom().getDirection());
 		//System.out.println("");
-		encryptedM.setVehicleNum(encryptString(m.getVehicleNum()));
-
-		System.out.println("Vehcile Number after encryption "+m.getVehicleNum());
+		encryptedM.vehicleNum=encrypt(m.vehicleNum,m.speed);
+		
+		System.out.println("Vehcile Number after encryption "+encryptedM.vehicleNum);
 		//encryptedM.getFrom().setDirection(encryptString(m.getDirection(),m));
 		//decryptedM.getFrom().setPath(decryptString(m.getFrom().getPath()));
 		//encryptedM.getFrom().setEncryptedSpeed(encryptString(m.getFrom().getSpeed()+""));
 		return encryptedM;
-	}
+	}*/
 
-	public String encryptString(String rawData){
-
-		//Cipher cipher;
-		/*byte[] encrypted = new byte[117];
-		RSATrial rsa=new RSATrial();
-
-		byte[]  encryptedValue = rsa.encrypt(rawData.getBytes());
-		String test = "";
-        for (byte b : encryptedValue)
-        {
-            test += Byte.toString(b);
-        }*/
-		// decrypt
-		/*String encryptedValue="";
-		//System.out.println("Public key finally for receiver "+m.getTo().getName()+":: "+m.getTo().getPublicKey());
-		//System.out.println("Raw data for vehicle number "+rawData);
-		try {
-			cipher = Cipher.getInstance("RSA");
-			cipher.init(Cipher.ENCRYPT_MODE,m.getTo().getPublicKey());
-			System.out.println("Encrypting data"+rawData);
-			encrypted = cipher.doFinal(rawData.getBytes());
-			System.out.println("Encrypting data after getBytes"+ encrypted.toString());
-
-			BASE64Encoder base64 = new BASE64Encoder();
-			encryptedValue = base64.encode(encrypted);
-
-
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalBlockSizeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (BadPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
-
+	public Message encryptMessage(Message m){
+		Message encryptedM =m;
 		byte[] ciphertext=new byte[128];
 		try {
 
 			PublicKey key = to.getPublicKey();
-			System.out.println("public key of host is "+key);
 			Cipher cipher;
-
 			cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-
-
-
 			cipher.init(Cipher.ENCRYPT_MODE, key);
-
-			ciphertext = cipher.doFinal(rawData.getBytes("UTF8"));
-
-
+			ciphertext = cipher.doFinal(encryptedM.vehicleNum.getBytes("UTF8"));
+			
+			encryptedM.vehicleNum=encodeBASE64(ciphertext);
+			System.out.println("Speed before encryption : "+encryptedM.speed);
+			byte[] encryptedSpeed=cipher.doFinal(encryptedM.speed.getBytes("UTF-8"));
+			encryptedM.speed=encodeBASE64(encryptedSpeed);
+			System.out.println("Speed after encryption : "+encryptedM.speed);
 		}
 		catch (IllegalBlockSizeException | BadPaddingException | UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
@@ -473,114 +422,65 @@ public class Message implements Comparable<Message>, Serializable {
 			e.printStackTrace();
 		}
 
-		return encodeBASE64(ciphertext);
+		//return encodeBASE64(ciphertext);
+		return encryptedM;
 
 		//return test;
 	}
-	@SuppressWarnings("restriction")
 	private static String encodeBASE64(byte[] bytes)
 	{
 
 		BASE64Encoder b64 = new BASE64Encoder();
 		return b64.encode(bytes);
 	}
-	public Message decryptMessage(Message m){
-		Message decryptedM = m;
-		System.out.println("vehicle Num in message m after delivery "+m.getVehicleNum());
-		decryptedM.setVehicleNum(decryptString(m.getVehicleNum()));
-		System.out.println("Vehicle Number after decryption "+decryptedM.getVehicleNum());
-		//decryptedM.getFrom().setDirection(decryptString(m.getFrom().getDirection(),m));
-		//decryptedM.getFrom().setPath(decryptString(m.getFrom().getPath()));
-		//decryptedM.getFrom().setEncryptedSpeed(decryptString(m.getFrom().getSpeed()+"",m));
+/*	public Message decryptMessage(Message m){
+
+		
+		//System.out.println("vehicle Num in message m after delivery "+m.getVehicleNum());
+		decryptedM.vehicleNum =decryptString(m.vehicleNum);
+		System.out.println("Vehicle Number after decryption is "+decryptedM.vehicleNum);
 		return decryptedM;
-	}
+	}*/
 
-	public String decryptString(String encryptedData){
-		//byte[] data = new BASE64Decoder().decodeBuffer(encryptedData);
-		/*Cipher rsaCipher;
-
-
-		byte[] plainData = new byte[128];
-		// String decryptedValue=null;
-		byte[] decrypted = rsa.decrypt(encryptedData.getBytes());*/
-
-		/*   String test = "";
-        for (byte b : decrypted)
-        {
-            test += Byte.toString(b);
-        }*/
-		// return test;
-
-		/*  if(m.getTo().getPrivateKey().equals(this.getPrivateKey()))
-        	{System.out.println("Node id is::::::::::::::::: "+m.getFrom().getName());
-        	System.out.println("Node id of to node:::::::::"+m.getTo().getName());
-        	}*/
-		/*  
-		try {
-			//System.out.println("Private key of receiver node  "+m.getTo().getName()+": "+m.getTo().getPrivateKey());
-			rsaCipher = Cipher.getInstance("RSA");
-			rsaCipher.init(Cipher.DECRYPT_MODE, m.getTo().getPrivateKey());
-			System.out.println("Encrypted data in DTN host while decrption "+ encryptedData);
-			// String charSet="UTF-8";
-		    plainData = rsaCipher.doFinal(encryptedData.getBytes());
-		    BASE64Encoder base64 = new BASE64Encoder();
-		     decryptedValue = base64.encode(plainData);
-		    System.out.println(plainData);
-		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalBlockSizeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (BadPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} */
-
-		// return new String(plainData);
-		//return new String(decrypted);
-
+	public String decryptMessage(Message m){
+		Message decryptedM = m;
+		System.out.println("Going to decrypt : "+ decryptedM.vehicleNum);
 		PrivateKey key = to.getPrivateKey();
 		Cipher cipher;
 		byte[] plaintext=new byte[117];
 		String data="";
-		try {
+		byte[] decryptedSpeed=new byte[117];
+		try 
+		{
 			cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
 			cipher.init(Cipher.DECRYPT_MODE, key);
-
-			plaintext = cipher.doFinal(decodeBASE64(encryptedData));
+			plaintext = cipher.doFinal(decodeBASE64(decryptedM.vehicleNum));
 			data= new String(plaintext, "UTF8");
-			System.out.println("data aftre decrypion :" +data);
-		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+			decryptedM.vehicleNum=data;
+			
+			System.out.println("Speed before decryption : "+decryptedM.speed);
+			//String str=Double.toString(decryptedM.speed);
+			decryptedSpeed=cipher.doFinal(decodeBASE64(decryptedM.speed));
+			decryptedM.speed=new String(decryptedSpeed, "UTF8");
+			System.out.println("Speed after decryption : "+ decryptedM.speed);
+			
+			//System.out.println("data aftre decrypion :" +data);
+		} 
+		catch (NoSuchAlgorithmException | NoSuchPaddingException |InvalidKeyException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (InvalidKeyException e) {
+		} 
+		catch (IllegalBlockSizeException|BadPaddingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (IllegalBlockSizeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (BadPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (Exception e) {
+		} 
+		catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 		return data;
-
-
-
-
-
-
-
-
 	}
+
 	private static byte[] decodeBASE64(String text) throws Exception
 	{
 		BASE64Decoder b64 = new BASE64Decoder();

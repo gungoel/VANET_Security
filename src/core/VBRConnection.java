@@ -27,6 +27,7 @@ public class VBRConnection extends Connection {
 		   DTNHost toNode, DTNHost vehicleNum, DTNHost direction,NetworkInterface toInterface) {
 	    super(fromNode, fromInterface, toNode, vehicleNum,direction, toInterface);
 		this.msgsent = 0;
+		System.out.println("IN VBR connection cnstructor");
 	}
 	
 	/**

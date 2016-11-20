@@ -331,7 +331,7 @@ public abstract class MessageRouter {
 		Message aMessage = (outgoing==null)?(incoming):(outgoing);
 		// If the application re-targets the message (changes 'to')
 		// then the message is not considered as 'delivered' to this host.
-		System.out.println("In Message router "+aMessage.getVehicleNum()+"from node id "+aMessage.getFrom().getName());
+		//System.out.println("In Message router "+aMessage.veh+"from node id "+aMessage.getFrom().getName());
 		
 		isFinalRecipient = aMessage.getTo() == this.host;
 		isFirstDelivery = isFinalRecipient &&

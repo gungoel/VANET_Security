@@ -37,11 +37,11 @@ public class DTNHost implements Comparable<DTNHost> {
 	private List<MovementListener> movListeners;
 	private List<NetworkInterface> net;
 	private ModuleCommunicationBus comBus;
-	
+
 	// Added for VANET
 
 
-	private String encryptedSpeed;
+	//private String encryptedSpeed;
 	private String direction;
 	private String vehicleNum;
 	private PrivateKey privateKey;
@@ -115,12 +115,12 @@ public class DTNHost implements Comparable<DTNHost> {
 			privateKey=key.getPrivate();
 			publicKey=key.getPublic();
 			System.out.println("Private key generated for DTN host id "+ name +" is "+ privateKey);
-			
+
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 
 
 
@@ -131,7 +131,7 @@ public class DTNHost implements Comparable<DTNHost> {
 
 		this.name = groupId+ address; ///changed the name as vehicle no.
 		//this.vehicleNum=VehicleName();
-		this.vehicleNum="abc"+getNextAddress();
+		this.vehicleNum="Vehicle "+getNextAddress();
 
 		this.direction="UP";   //
 
@@ -179,12 +179,6 @@ public class DTNHost implements Comparable<DTNHost> {
 	private synchronized static int getNextAddress() {
 		return nextAddress++;
 
-		//generate unique random number
-	}
-
-	private synchronized static String VehicleName() {
-		//return "abc"+nextAddress++;
-		return ""+nextAddress++;
 		//generate unique random number
 	}
 
@@ -552,7 +546,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	 */
 	public void createNewMessage(Message m) {
 		this.router.createNewMessage(m);
-		System.out.println("Message in encrypted form in DTN host"+m.getVehicleNum());
+		//System.out.println("Message in encrypted form in DTN host"+m.getVehicleNum());
 	}
 
 	/**
@@ -592,19 +586,11 @@ public class DTNHost implements Comparable<DTNHost> {
 	public int compareTo(DTNHost h) {
 		return this.getAddress() - h.getAddress();
 	}
-
-
-	
 	public PrivateKey getPrivateKey() {
 		return privateKey;
 	}
 	public void setPrivateKey(PrivateKey privateKey) {
 		this.privateKey = privateKey;
 	}
-	public String getEncryptedSpeed() {
-		return encryptedSpeed;
-	}
-	public void setEncryptedSpeed(String encryptedSpeed) {
-		this.encryptedSpeed = encryptedSpeed;
-	}
+
 }
