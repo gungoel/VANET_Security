@@ -13,15 +13,22 @@ public class CentralAuthority {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		CentralAuthority c=new CentralAuthority();
-		KeyPair k=c.generateKeyPair();
+		//KeyPair k=c.generateKeyPair();
 		//	System.out.println("Private key "+k.getPrivate());
 		//System.out.println("Public Key "+k.getPublic());
 
 	}
-
-	public KeyPair generateKeyPair()
+	public KeyPair generateKeys() throws Exception
 	{
-		/*KeyPair keys=null;
+		KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA");
+		keygen.initialize(512);
+		KeyPair keyPair = keygen.generateKeyPair();
+		return keyPair;
+	}
+
+	/*public KeyPair generateKeyPair()
+	{
+		KeyPair keys=null;
 		try {
 			KeyPairGenerator k=KeyPairGenerator.getInstance("RSA");
 			k.initialize(2048);
@@ -31,7 +38,7 @@ public class CentralAuthority {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return keys;*/
+		return keys;
 		KeyPairGenerator keyPairGenerator;
 		KeyPair keyPair=null;
 		try {
@@ -65,6 +72,6 @@ public class CentralAuthority {
 		}
 
 return keyPair;
-	}
+	}*/
 
 }

@@ -4,27 +4,17 @@
  */
 package core;
 
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-
-import Decoder.BASE64Encoder;
 import movement.MovementModel;
 import movement.Path;
 import routing.MessageRouter;
 import routing.RoutingInfo;
-import sun.misc.BASE64Decoder;
 
 
 /**
@@ -47,7 +37,7 @@ public class DTNHost implements Comparable<DTNHost> {
 	private List<MovementListener> movListeners;
 	private List<NetworkInterface> net;
 	private ModuleCommunicationBus comBus;
-	private RSATrial rsa;
+	
 	// Added for VANET
 
 
@@ -118,16 +108,19 @@ public class DTNHost implements Comparable<DTNHost> {
 
 
 		//CentralAuthority central=new CentralAuthority();
-		RSAusingSecurityClasses keys=new RSAusingSecurityClasses();
+		CentralAuthority keys=new CentralAuthority();
 		try {
-			keys = new RSAusingSecurityClasses();
+			//keys = new RSAusingSecurityClasses();
 			KeyPair key=keys.generateKeys();
 			privateKey=key.getPrivate();
 			publicKey=key.getPublic();
+			System.out.println("Private key generated for DTN host id "+ name +" is "+ privateKey);
+			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
 
 
 
@@ -167,7 +160,7 @@ public class DTNHost implements Comparable<DTNHost> {
 
 		this.nextTimeToMove = movement.nextPathAvailable();
 		this.path = null;
-		rsa=new RSATrial();
+		//rsa=new RSATrial();
 
 		if (movLs != null) { // inform movement listeners about the location
 			for (MovementListener l : movLs) {

@@ -26,6 +26,7 @@ import sun.misc.BASE64Encoder;
 /**
  * A message that is created at a node or passed between nodes.
  */
+@SuppressWarnings("serial")
 public class Message implements Comparable<Message>, Serializable {
 	/** Value for infinite TTL of message */
 	public static final int INFINITE_TTL = -1;
@@ -390,7 +391,7 @@ public class Message implements Comparable<Message>, Serializable {
 		//System.out.println("Direction "+m.getFrom().getDirection());
 		//System.out.println("");
 		encryptedM.setVehicleNum(encryptString(m.getVehicleNum()));
-		
+
 		System.out.println("Vehcile Number after encryption "+m.getVehicleNum());
 		//encryptedM.getFrom().setDirection(encryptString(m.getDirection(),m));
 		//decryptedM.getFrom().setPath(decryptString(m.getFrom().getPath()));
@@ -446,6 +447,7 @@ public class Message implements Comparable<Message>, Serializable {
 		try {
 
 			PublicKey key = to.getPublicKey();
+			System.out.println("public key of host is "+key);
 			Cipher cipher;
 
 			cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
@@ -456,7 +458,7 @@ public class Message implements Comparable<Message>, Serializable {
 
 			ciphertext = cipher.doFinal(rawData.getBytes("UTF8"));
 
-			
+
 		}
 		catch (IllegalBlockSizeException | BadPaddingException | UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
@@ -475,14 +477,16 @@ public class Message implements Comparable<Message>, Serializable {
 
 		//return test;
 	}
+	@SuppressWarnings("restriction")
 	private static String encodeBASE64(byte[] bytes)
 	{
+
 		BASE64Encoder b64 = new BASE64Encoder();
 		return b64.encode(bytes);
 	}
 	public Message decryptMessage(Message m){
 		Message decryptedM = m;
-		System.out.println("vehicle Num in message m  "+m.getVehicleNum());
+		System.out.println("vehicle Num in message m after delivery "+m.getVehicleNum());
 		decryptedM.setVehicleNum(decryptString(m.getVehicleNum()));
 		System.out.println("Vehicle Number after decryption "+decryptedM.getVehicleNum());
 		//decryptedM.getFrom().setDirection(decryptString(m.getFrom().getDirection(),m));
@@ -547,9 +551,9 @@ public class Message implements Comparable<Message>, Serializable {
 			cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
 			cipher.init(Cipher.DECRYPT_MODE, key);
 
-			 plaintext = cipher.doFinal(decodeBASE64(encryptedData));
-			  data= new String(plaintext, "UTF8");
-			  System.out.println("data aftre decrypion :" +data);
+			plaintext = cipher.doFinal(decodeBASE64(encryptedData));
+			data= new String(plaintext, "UTF8");
+			System.out.println("data aftre decrypion :" +data);
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -566,9 +570,9 @@ public class Message implements Comparable<Message>, Serializable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		return data;
-		
+
 
 
 
