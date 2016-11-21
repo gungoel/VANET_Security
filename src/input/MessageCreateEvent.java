@@ -53,17 +53,16 @@ public class MessageCreateEvent extends MessageEvent {
 
 		DTNHost to = world.getNodeByAddress(this.toAddr);
 		DTNHost from = world.getNodeByAddress(this.fromAddr);
-		
-		
 		Message m = new Message(from, to, this.id, this.size);
-       // m.setVehicleNum(from.getVehicleNum());
+        m.setVehicleNum(from.getVehicleNum());
 		m.setResponseSize(this.responseSize);
 		
 		
 			//System.out.println("from node"+ m.getVehicleNum());
 			//System.out.println("to node "+ to);
 
-			Message encryptedM=m.encryptMessage(m);
+		Message encryptedM=m.encryptMessage();
+		encryptedM.setSignature();
 			//m=encryptedM;
 			//System.out.println("Finalllllyyyy u shud be the one");
 			//System.out.println("DTN host speed "+ from.getSpeed()+"destination is "+ from.getDestination());
@@ -71,7 +70,7 @@ public class MessageCreateEvent extends MessageEvent {
 		System.out.println("");
 		//System.out.println("details of to host"+ to.getAddress()+" Name "+to.getName());
 		//System.out.println("details of from host "+ from.getAddress()+"name "+from.getName());
-		//System.out.println("Encrypted Message :  "+ encryptedM.getVehicleNum()+"id : "+ encryptedM.getId());
+		System.out.println("Encrypted Message :  "+ encryptedM.getVehicleNum()+"id : "+ encryptedM.getId());
 	
 		from.createNewMessage(encryptedM);
 		System.out.println("**************************************************************");
