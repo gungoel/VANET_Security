@@ -287,8 +287,14 @@ public abstract class MessageRouter {
 	 */
 	public int receiveMessage(Message m, DTNHost from) {
 		Message newMessage = m.replicate();
-				
-		this.putToIncomingBuffer(newMessage, from);		
+		if(!m.verifySignature())
+		{
+			System.out.println("Message sent by unknown sender. Signature verification failed.");
+			deleteMessage(m.getId(),false);		// Remove msg from queue since not authenticated
+			return -1;
+		}
+		System.out.println("Message sender authenticated");
+		this.putToIncomingBuffer(newMessage, from);		//Put into msg buffer since authenticated
 		newMessage.addNodeOnPath(this.host);
 		
 		for (MessageListener ml : this.mListeners) {
@@ -331,7 +337,7 @@ public abstract class MessageRouter {
 		Message aMessage = (outgoing==null)?(incoming):(outgoing);
 		// If the application re-targets the message (changes 'to')
 		// then the message is not considered as 'delivered' to this host.
-		//System.out.println("In Message router "+aMessage.veh+"from node id "+aMessage.getFrom().getName());
+		System.out.println("In Message router "+aMessage.getVehicleNum()+"from node id "+aMessage.getFrom().getName());
 		
 		isFinalRecipient = aMessage.getTo() == this.host;
 		isFirstDelivery = isFinalRecipient &&

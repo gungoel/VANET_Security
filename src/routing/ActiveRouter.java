@@ -122,7 +122,8 @@ public abstract class ActiveRouter extends MessageRouter {
 	@Override
 	public Message messageTransferred(String id, DTNHost from) {
 		Message m = super.messageTransferred(id, from);
-
+        System.out.println("Back form message route");
+       
 		/**
 		 *  N.B. With application support the following if-block
 		 *  becomes obsolete, and the response size should be configured 

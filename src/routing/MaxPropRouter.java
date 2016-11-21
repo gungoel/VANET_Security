@@ -215,7 +215,7 @@ public class MaxPropRouter extends ActiveRouter {
 		System.out.println("In transfer done method");
 		Message m = con.getMessage();
 		/* was the message delivered to the final recipient? */
-		System.out.println("In Transfer done method"+ m.getVehicleNum());
+		System.out.println("In Transfer done method");
 		if (m.getTo() == con.getOtherNode(getHost())) { 
 			m.decryptMessage(m);
 			this.ackedMessageIds.add(m.getId()); // yes, add to ACKed messages
